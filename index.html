@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Hand Gesture Controlled Glitter Canvas ✨</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Google MediaPipe Hands & Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Fullscreen Multi-layer Canvas Stack -->
+  <div id="canvasContainer">
+    <!-- Layer 1: Ambient Cosmic Midnight Stardust -->
+    <canvas id="bgCanvas"></canvas>
+    <!-- Layer 2: Persistent Glitter Stroke Drawing Canvas -->
+    <canvas id="drawCanvas"></canvas>
+    <!-- Layer 3: Dynamic Particles, Cursor, and FX Canvas -->
+    <canvas id="fxCanvas"></canvas>
+  </div>
+
+  <!-- Top Glass Navigation Bar -->
+  <header id="topNav" class="glass-panel">
+    <div class="brand">
+      <span class="brand-icon">🪄</span>
+      <span class="brand-title">GLITTERIA</span>
+      <span class="brand-tag">AI Canvas</span>
+    </div>
+
+    <!-- Active Gesture HUD Indicator -->
+    <div class="gesture-hud">
+      <div id="gestureBadge" class="gesture-badge idle">
+        <span id="gestureIcon">✨</span>
+        <span id="gestureName">READY</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions-bar">
+      <button id="btnUndo" class="btn-icon" title="Undo (Ctrl+Z)" disabled>↩️</button>
+      <button id="btnRedo" class="btn-icon" title="Redo (Ctrl+Y)" disabled>↪️</button>
+      <button id="btnClear" class="btn-icon" title="Clear Canvas (C)">🗑️</button>
+      <button id="btnSave" class="btn-text btn-primary" title="Save Artwork (S)">
+        <span>💾</span> Save
+      </button>
+      <button id="btnAudioToggle" class="btn-icon" title="Toggle Sound FX (M)">🔔</button>
+      <button id="btnShowTutorial" class="btn-icon" title="Gestures Tutorial (T)">❓</button>
+      <button id="btnFullscreen" class="btn-icon" title="Toggle Fullscreen">⛶</button>
+    </div>
+  </header>
+
+  <!-- Left Floating Controls Panel -->
+  <aside id="toolsPanel" class="glass-panel">
+    <div class="panel-header">Glitter Palette</div>
+    <div id="paletteContainer" class="palette-grid">
+      <!-- Generated via JS with swatches -->
+    </div>
+
+    <div class="panel-header" style="margin-top: 6px;">Glitter Dynamics</div>
+
+    <!-- Brush Size -->
+    <div class="control-group">
+      <div class="control-label">
+        <span>Brush Size</span>
+        <span id="brushSizeVal">16px</span>
+      </div>
+      <input id="brushSizeSlider" type="range" class="slider" min="6" max="42" value="16" step="1">
+    </div>
+
+    <!-- Particle Density -->
+    <div class="control-group">
+      <div class="control-label">
+        <span>Density</span>
+        <span id="densityVal">High</span>
+      </div>
+      <input id="densitySlider" type="range" class="slider" min="0.8" max="4.0" value="2.2" step="0.2">
+    </div>
+
+    <!-- Glitter Glow Intensity -->
+    <div class="control-group">
+      <div class="control-label">
+        <span>Glow & Sparkle</span>
+        <span id="intensityVal">100%</span>
+      </div>
+      <input id="intensitySlider" type="range" class="slider" min="0.5" max="2.0" value="1.0" step="0.1">
+    </div>
+
+    <!-- Scatter Radius -->
+    <div class="control-group">
+      <div class="control-label">
+        <span>Scatter Dust</span>
+        <span id="scatterVal">Velvet</span>
+      </div>
+      <input id="scatterSlider" type="range" class="slider" min="0.4" max="2.2" value="1.0" step="0.1">
+    </div>
+  </aside>
+
+  <!-- Bottom-Right Picture-in-Picture Webcam Box -->
+  <div id="pipContainer" class="glass-panel">
+    <div class="pip-header">
+      <div class="pip-title">
+        <span>📷 Camera</span>
+        <span id="fpsValue" class="fps-badge">--</span>
+      </div>
+      <div class="pip-actions">
+        <button id="btnToggleSkeleton" class="btn-pip-tool active" title="Toggle Skeleton Wireframe">🦴</button>
+        <button id="btnTogglePip" class="btn-pip-tool" title="Minimize / Expand">➖</button>
+      </div>
+    </div>
+    <div id="pipBody">
+      <video id="webcamVideo" playsinline></video>
+      <canvas id="pipCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Toast Notification Capsule -->
+  <div id="toast" class="hidden"></div>
+
+  <!-- Welcome / Camera Activation Modal -->
+  <div id="welcomeModal" class="modal-overlay">
+    <div class="modal-card glass-panel">
+      <div style="font-size: 48px; filter: drop-shadow(0 0 20px #FFD700);">🪄✨</div>
+      <h1 class="modal-title">AI Glitter Canvas</h1>
+      <p class="modal-desc">
+        Welcome to an interactive digital art installation. Draw magical sparkling glitter in the air using your laptop webcam and natural hand gestures.
+      </p>
+
+      <div class="gestures-grid">
+        <div class="gesture-card">
+          <span class="gesture-card-icon">☝️</span>
+          <span class="gesture-card-title">Index Up: Draw</span>
+          <span class="gesture-card-desc">Raise index fingertip to paint glittering trails.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">🖐️</span>
+          <span class="gesture-card-title">Open Palm: Erase</span>
+          <span class="gesture-card-desc">Spread your hand to wipe away glitter smoothly.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">✊</span>
+          <span class="gesture-card-title">Fist: Pause</span>
+          <span class="gesture-card-desc">Curl fingers to hover pointer without drawing.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">✌️</span>
+          <span class="gesture-card-title">Two Fingers: Color</span>
+          <span class="gesture-card-desc">Hold peace sign to cycle between 8 glitter palettes.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">👌</span>
+          <span class="gesture-card-title">Pinch: Sparkle Burst</span>
+          <span class="gesture-card-desc">Pinch thumb & index to explode a shower of sparkles.</span>
+        </div>
+      </div>
+
+      <button id="btnStartDrawing" class="cta-button">
+        <span>✨ START DRAWING</span>
+      </button>
+
+      <p style="font-size: 11px; color: #64748B; margin-top: 4px;">
+        Webcam video stays 100% private in your browser. Also supports mouse/trackpad drawing!
+      </p>
+    </div>
+  </div>
+
+  <!-- Gesture Tutorial Modal -->
+  <div id="tutorialModal" class="modal-overlay hidden">
+    <div class="modal-card glass-panel">
+      <h2 class="modal-title">Hand Gesture Guide</h2>
+      <p class="modal-desc">
+        Position your hand comfortably within the webcam frame. Use these 5 intuitive gestures:
+      </p>
+
+      <div class="gestures-grid">
+        <div class="gesture-card">
+          <span class="gesture-card-icon">☝️</span>
+          <span class="gesture-card-title">Index Finger: Draw</span>
+          <span class="gesture-card-desc">Keep index extended and other fingers curled. Continuous glitter sparkles follow your fingertip.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">🖐️</span>
+          <span class="gesture-card-title">Open Palm: Erase</span>
+          <span class="gesture-card-desc">Extend all fingers wide. A soft holographic eraser circle appears around your hand to wipe away strokes.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">✊</span>
+          <span class="gesture-card-title">Closed Fist: Pause</span>
+          <span class="gesture-card-desc">Clench your fist to freely move your hand across the screen without painting or erasing.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">✌️</span>
+          <span class="gesture-card-title">Two Fingers: Change Color</span>
+          <span class="gesture-card-desc">Hold index & middle fingers up. Watch the blue charging ring fill up to cycle to the next radiant color.</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-card-icon">👌</span>
+          <span class="gesture-card-title">Pinch: Sparkle Burst</span>
+          <span class="gesture-card-desc">Bring thumb tip and index tip together to detonate a spectacular firework explosion of floating star sparkles.</span>
+        </div>
+      </div>
+
+      <button id="btnCloseTutorial" class="btn-text btn-primary" style="margin: 8px auto 0; padding: 10px 24px;">
+        Got it! Close Guide
+      </button>
+    </div>
+  </div>
+
+  <!-- Save Artwork Modal -->
+  <div id="saveModal" class="modal-overlay hidden">
+    <div class="modal-card glass-panel" style="max-width: 440px;">
+      <div style="font-size: 36px;">🖼️</div>
+      <h2 class="modal-title">Save Artwork</h2>
+      <p class="modal-desc">
+        Export your glowing masterpiece as a crystal-clear high resolution PNG image:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin: 12px 0;">
+        <button id="btnSaveCosmic" class="cta-button" style="width: 100%; margin: 0; justify-content: center;">
+          🌌 With Cosmic Midnight Background
+        </button>
+        <button id="btnSaveTransparent" class="btn-text" style="justify-content: center; padding: 12px; border-radius: 30px;">
+          ✨ Transparent PNG (Strokes Only)
+        </button>
+      </div>
+
+      <button id="btnCloseSave" class="btn-text" style="margin: 0 auto; background: transparent; border: none; color: #94A3B8;">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Application Module Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

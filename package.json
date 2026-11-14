@@ -1,0 +1,22 @@
+{
+  "name": "ai-glitter-canvas",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Visually stunning, real-time AI Hand Gesture Controlled Glitter Canvas using webcam and MediaPipe",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve:py": "python3 -m http.server 3000"
+  },
+  "keywords": [
+    "mediapipe",
+    "hand-tracking",
+    "glitter",
+    "canvas",
+    "creative-coding",
+    "webcam",
+    "interactive-art"
+  ],
+  "author": "Anya Singh",
+  "license": "MIT"
+}
